@@ -12,6 +12,7 @@ static ssize_t device_write(struct file *, const char *, size_t, loff_t *);
 #define SUCCESS 0
 #define DEVICE_NAME "chardev"
 #define BUF_LEN 80
+#define MIN(a,b) (a)<(b)?(a):(b)
 
 /*
 * Global variables are declared as static, so are global within the file.
@@ -104,6 +105,8 @@ static ssize_t device_read(struct file *filp, char *buffer, size_t length, loff_
 
 static ssize_t device_write(struct file *filp, const char *buff, size_t len, loff_t * off)
 {
-    printk(KERN_ALERT "Sorry, this operation isn't supported.\n");
-    return -EINVAL;
+    int length = MIN(len,BUF_LEN);
+    copy_from_user(msg, buff, length);
+    msg_Ptr = msg;
+    return length;
 }
