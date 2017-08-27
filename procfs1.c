@@ -7,19 +7,21 @@
 #define procfs_string "Hello World\n"
 #define MIN(a,b) (a)<(b)?(a):(b)
 #define SUCCESS 0
-
+#define BUF_LEN 80
+int len = 0;
 struct proc_dir_entry *Our_Proc_File;
 
 static int count;
-
+static char msg[BUF_LEN];
+static char *msg_Ptr;
 static ssize_t procfile_read(struct file *filp, char *buffer, size_t length, loff_t * offset)
 {
     unsigned long p = *offset;
     printk(KERN_INFO "offset %x %d\n", p, count++);
     if(p == 0)
     {
-        int bytes_read = strlen(procfs_string)+1;
-        copy_to_user(buffer, procfs_string, bytes_read); 
+        int bytes_read = len+1;
+        copy_to_user(buffer, msg, bytes_read); 
         *offset = bytes_read;
         return bytes_read;
     } 
@@ -27,6 +29,15 @@ static ssize_t procfile_read(struct file *filp, char *buffer, size_t length, lof
     {
         return 0;
     }
+}
+
+static ssize_t procfile_write(struct file *filp, char *buffer, size_t length, loff_t * offset)
+{
+    len = MIN(length,BUF_LEN);
+    copy_from_user(msg, buffer, len);
+    msg_Ptr = msg;
+    printk(KERN_INFO "procfs_write: write %lu bytes\n", len);
+    return length;
 }
 
 
@@ -39,6 +50,7 @@ static const struct file_operations proc_file_fops = {
  .owner = THIS_MODULE,
  .open  = procfile_open,
  .read  = procfile_read,
+ .write = procfile_write
 };
 
 int init_module()
